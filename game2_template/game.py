@@ -259,7 +259,7 @@ def execute_take(item_id):
 
     for item in current_room["items"]:
         if item_id == item["id"]:
-            if calculatenewmass(inventory, item["mass"]) <= 4:
+            if calculatenewmass(inventory, item["mass"]) <= 3:
                 inventory.append(item)
                 current_room["items"].remove(item)
                 return ""
