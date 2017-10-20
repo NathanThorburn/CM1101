@@ -27,7 +27,7 @@ def list_of_items(items):
     itemlist = ""
     for item in items:
         itemlist = itemlist + ", " + item["name"]
-    return itemlist.strip()
+    return itemlist[2:]
 
 
 def print_room_items(room):
@@ -52,7 +52,12 @@ def print_room_items(room):
     Note: <BLANKLINE> here means that doctest should expect a blank line.
 
     """
-    pass
+
+    roomitems = list_of_items(room["items"])
+    if roomitems != "":
+        print("There is " + roomitems + " here.")
+        print()
+
 
 
 def print_inventory_items(items):
@@ -65,7 +70,9 @@ def print_inventory_items(items):
     <BLANKLINE>
 
     """
-    pass
+    invitems = list_of_items(items)
+    print("You have", invitems + ".")
+    print()
 
 
 def print_room(room):
@@ -121,10 +128,8 @@ def print_room(room):
     # Display room description
     print(room["description"])
     print()
+    print_room_items(room)
 
-    #
-    # COMPLETE ME!
-    #
 
 def exit_leads_to(exits, direction):
     """This function takes a dictionary of exits and a direction (a particular
@@ -193,9 +198,11 @@ def print_menu(exits, room_items, inv_items):
         # Print the exit name and where it leads to
         print_exit(direction, exit_leads_to(exits, direction))
 
-    #
-    # COMPLETE ME!
-    #
+    for item in room_items:
+        print("TAKE " + item["id"].upper() + " to take " + item["name"] + ".")
+
+    for invitem in inv_items:
+        print("DROP " + invitem["id"].upper() + " to drop your " + invitem["name"] + ".")
     
     print("What do you want to do?")
 
@@ -219,14 +226,29 @@ def is_valid_exit(exits, chosen_exit):
     return chosen_exit in exits
 
 
+def calculatenewmass(items, newitem):
+    # This fuction calculates the new mass of the player when they pick up an object, the first argument
+    # relates to the player's inventory and the second argument contains the mass of the item being picked up.
+
+    totalmass = 0
+    for item in items:
+        totalmass = float(totalmass) + float(item["mass"])
+        newtotalmass = float(totalmass) + float(newitem)
+    return newtotalmass
+
+
 def execute_go(direction):
     """This function, given the direction (e.g. "south") updates the current room
     to reflect the movement of the player if the direction is a valid exit
     (and prints the name of the room into which the player is
     moving). Otherwise, it prints "You cannot go there."
     """
-    pass
+    global current_room
 
+    if is_valid_exit(current_room["exits"], direction) == True:
+        current_room = rooms[current_room["exits"][direction]]
+    else:
+        print("You cannot go there.")
 
 def execute_take(item_id):
     """This function takes an item_id as an argument and moves this item from the
@@ -234,16 +256,35 @@ def execute_take(item_id):
     there is no such item in the room, this function prints
     "You cannot take that."
     """
-    pass
-    
+
+    for item in current_room["items"]:
+        if item_id == item["id"]:
+            if calculatenewmass(inventory, item["mass"]) <= 4:
+                inventory.append(item)
+                current_room["items"].remove(item)
+                return ""
+            else:
+                print("You are carrying too much.")
+                return ""
+
+    print("You cannot take that.")
+
 
 def execute_drop(item_id):
     """This function takes an item_id as an argument and moves this item from the
     player's inventory to list of items in the current room. However, if there is
     no such item in the inventory, this function prints "You cannot drop that."
+
     """
-    pass
-    
+
+    for item in inventory:
+        if item_id == item["id"]:
+            current_room["items"].append(item)
+            inventory.remove(item)
+            return ""
+
+    print("You cannot drop that.")
+        
 
 def execute_command(command):
     """This function takes a command (a list of words as returned by
@@ -316,11 +357,30 @@ def move(exits, direction):
     return rooms[exits[direction]]
 
 
+def checkwinningconditions(items):
+    # This function returns whether or not the winning conditions has been met (collecting all items),
+    # the argument contains the players inventory which is used to calculate the total items collected.
+
+    maxitems = 6
+    totalitems = 0
+    for item in items:
+        totalitems = totalitems + 1
+
+    if totalitems >= maxitems:
+        return True
+    else:
+        return False
+
 # This is the entry point of our program
 def main():
 
     # Main game loop
     while True:
+        # Check for winnning conditions. (All items collected.)
+        if checkwinningconditions(inventory) == True:
+            print("Congratulations, you've won!")
+            break
+
         # Display game status (room description, inventory etc.)
         print_room(current_room)
         print_inventory_items(inventory)
